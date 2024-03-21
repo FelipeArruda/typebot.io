@@ -1,5 +1,6 @@
 import { VariableStore, LogsStore } from '@typebot.io/forge'
-import { ForgedBlock, forgedBlocks } from '@typebot.io/forge-schemas'
+import { forgedBlocks } from '@typebot.io/forge-repository/definitions'
+import { ForgedBlock } from '@typebot.io/forge-repository/types'
 import { decrypt } from '@typebot.io/lib/api/encryption/decrypt'
 import { isPlaneteScale } from '@typebot.io/lib/isPlanetScale'
 import prisma from '@typebot.io/lib/prisma'
@@ -18,12 +19,14 @@ import { updateVariablesInSession } from '@typebot.io/variables/updateVariablesI
 import { ExecuteIntegrationResponse } from '../types'
 import { byId } from '@typebot.io/lib'
 import { BubbleBlockType } from '@typebot.io/schemas/features/blocks/bubbles/constants'
+import { env } from '@typebot.io/env'
+import { getCredentials } from '../queries/getCredentials'
 
 export const executeForgedBlock = async (
   state: SessionState,
   block: ForgedBlock
 ): Promise<ExecuteIntegrationResponse> => {
-  const blockDef = forgedBlocks.find((b) => b.id === block.type)
+  const blockDef = forgedBlocks[block.type]
   if (!blockDef) return { outgoingEdgeId: block.outgoingEdgeId }
   const action = blockDef.actions.find((a) => a.name === block.options.action)
   const noCredentialsError = {
@@ -39,11 +42,7 @@ export const executeForgedBlock = async (
         logs: [noCredentialsError],
       }
     }
-    credentials = await prisma.credentials.findUnique({
-      where: {
-        id: block.options.credentialsId,
-      },
-    })
+    credentials = await getCredentials(block.options.credentialsId)
     if (!credentials) {
       console.error('Could not find credentials in database')
       return {
@@ -56,15 +55,13 @@ export const executeForgedBlock = async (
   const typebot = state.typebotsQueue[0].typebot
   if (
     action?.run?.stream &&
-    isPlaneteScale() &&
-    credentials &&
-    isCredentialsV2(credentials) &&
-    state.isStreamEnabled &&
-    !state.whatsApp &&
     isNextBubbleTextWithStreamingVar(typebot)(
       block.id,
       action.run.stream.getStreamVariableId(block.options)
-    )
+    ) &&
+    state.isStreamEnabled &&
+    !state.whatsApp &&
+    !process.env.VERCEL_ENV
   ) {
     return {
       outgoingEdgeId: block.outgoingEdgeId,
