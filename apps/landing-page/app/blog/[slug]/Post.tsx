@@ -5,25 +5,18 @@ import { Link } from '@chakra-ui/next-js'
 import {
   Alert,
   AlertIcon,
+  AlertTitle,
   Heading,
   Stack,
-  Table,
-  TableCaption,
-  TableContainer,
-  Tbody,
-  Td,
   Text,
-  Tfoot,
-  Th,
-  Thead,
-  Tr,
-  Image,
 } from '@chakra-ui/react'
 import { MDXRemote, MDXRemoteSerializeResult } from 'next-mdx-remote'
 import { highlight } from 'sugar-high'
 import { Tweet } from './Tweet'
 import { Standard } from '@typebot.io/nextjs'
 import { EndCta } from '@/components/Homepage/EndCta'
+import { Table } from './Table'
+import Image from 'next/image'
 
 type Props = {
   metadata: {
@@ -35,7 +28,7 @@ type Props = {
 
 export const Post = ({ metadata, mdxSource }: Props) => (
   <Stack spacing={10} my="20" w="full">
-    <Stack mx="auto" w="full" maxW="65ch">
+    <Stack mx="auto" w="full" maxW={['full', '46rem']} px={[3, 3, 0]}>
       <Heading>{metadata.title}</Heading>
       <Text>{formatDate(metadata.publishedAt)}</Text>
     </Stack>
@@ -43,17 +36,19 @@ export const Post = ({ metadata, mdxSource }: Props) => (
       mx="auto"
       spacing={0}
       as="article"
-      className="prose prose-quoteless prose-neutral prose-invert max-w-none w-full px-3 sm:px-0"
+      px={3}
+      w="full"
+      className="prose prose-quoteless prose-neutral prose-invert max-w-none"
     >
       <MDXRemote
         {...mdxSource}
         components={{
           h1: (props) => <Heading as="h1" {...props} />,
-          h2: (props) => <Heading as="h2" {...props} />,
-          h3: (props) => <Heading as="h3" {...props} />,
-          h4: (props) => <Heading as="h4" {...props} />,
-          h5: (props) => <Heading as="h5" {...props} />,
-          h6: (props) => <Heading as="h6" {...props} />,
+          h2: (props) => <Heading as="h2" fontSize="3xl" {...props} />,
+          h3: (props) => <Heading as="h3" fontSize="2xl" {...props} />,
+          h4: (props) => <Heading as="h4" fontSize="xl" {...props} />,
+          h5: (props) => <Heading as="h5" fontSize="lg" {...props} />,
+          h6: (props) => <Heading as="h6" fontSize="md" {...props} />,
           code: ({ children, ...props }) => {
             const codeHTML = highlight(children?.toString() ?? '')
             return (
@@ -63,16 +58,27 @@ export const Post = ({ metadata, mdxSource }: Props) => (
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           link: (props: any) => <Link {...props} />,
           Image: (props) => (
-            <Image rounded="md" maxW={['full', '65ch']} {...props} />
+            <Image {...props} style={{ borderRadius: '.5rem' }} />
           ),
-          Callout: ({ children, ...props }) => (
+          Callout: ({ children, title, ...props }) => (
             <Alert rounded="md" {...props}>
               <AlertIcon />
+              {title ? <AlertTitle>{title}</AlertTitle> : null}
               {children}
             </Alert>
           ),
           Tweet,
-          Typebot: Standard,
+          Typebot: (props) => (
+            <Standard
+              {...props}
+              typebot={props.typebot}
+              style={{
+                borderRadius: '0.375rem',
+                borderWidth: '1px',
+                height: '533px',
+              }}
+            />
+          ),
           Youtube: ({ id }: { id: string }) => (
             <div className="w-full">
               <div
@@ -126,23 +132,14 @@ export const Post = ({ metadata, mdxSource }: Props) => (
               {...props}
               style={{ maxWidth: 'none' }}
               w="full"
-              height="70vh"
+              h="auto"
+              py="0"
               className="w-full"
               bgGradient={undefined}
+              polygonsBaseTop="0px"
             />
           ),
-          table: (props) => (
-            <TableContainer>
-              <Table {...props} />
-            </TableContainer>
-          ),
-          thead: Thead,
-          tbody: Tbody,
-          th: Th,
-          td: Td,
-          tfoot: Tfoot,
-          tr: Tr,
-          caption: TableCaption,
+          Table,
         }}
       />
     </Stack>
