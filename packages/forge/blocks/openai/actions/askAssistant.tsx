@@ -67,6 +67,8 @@ export const askAssistant = createAction({
     {
       id: 'fetchAssistants',
       fetch: async ({ options, credentials }) => {
+        if (!credentials?.apiKey) return []
+
         const config = {
           apiKey: credentials.apiKey,
           baseURL: options.baseUrl,
@@ -100,7 +102,8 @@ export const askAssistant = createAction({
     {
       id: 'fetchAssistantFunctions',
       fetch: async ({ options, credentials }) => {
-        if (!options.assistantId) return []
+        if (!options.assistantId || !credentials?.apiKey) return []
+
         const config = {
           apiKey: credentials.apiKey,
           baseURL: options.baseUrl,
@@ -139,8 +142,8 @@ export const askAssistant = createAction({
       getStreamVariableId: ({ responseMapping }) =>
         responseMapping?.find((m) => !m.item || m.item === 'Message')
           ?.variableId,
-      run: async ({ credentials, options, variables }) =>
-        createAssistantStream({
+      run: async ({ credentials, options, variables }) => ({
+        stream: await createAssistantStream({
           apiKey: credentials.apiKey,
           assistantId: options.assistantId,
           message: options.message,
@@ -151,6 +154,7 @@ export const askAssistant = createAction({
           functions: options.functions,
           responseMapping: options.responseMapping,
         }),
+      }),
     },
     server: async ({
       credentials: { apiKey },

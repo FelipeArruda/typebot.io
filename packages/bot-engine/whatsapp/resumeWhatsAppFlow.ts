@@ -69,28 +69,31 @@ export const resumeWhatsAppFlow = async ({
 
   const session = await getSession(sessionId)
 
-  if (session?.isReplying) {
-    console.log('Is currently replying, skipping...')
-    return {
-      message: 'Message received',
-    }
-  }
-
-  await setIsReplyingInChatSession({
-    existingSessionId: session?.id,
-    newSessionId: sessionId,
-  })
-
   const isSessionExpired =
     session &&
     isDefined(session.state.expiryTimeout) &&
     session?.updatedAt.getTime() + session.state.expiryTimeout < Date.now()
+
+  if (session?.isReplying) {
+    if (!isSessionExpired) {
+      console.log('Is currently replying, skipping...')
+      return {
+        message: 'Message received',
+      }
+    }
+  } else {
+    await setIsReplyingInChatSession({
+      existingSessionId: session?.id,
+      newSessionId: sessionId,
+    })
+  }
 
   const resumeResponse =
     session && !isSessionExpired
       ? await continueBotFlow(reply, {
           version: 2,
           state: { ...session.state, whatsApp: { contact } },
+          textBubbleContentFormat: 'richText',
         })
       : workspaceId
       ? await startWhatsAppSession({

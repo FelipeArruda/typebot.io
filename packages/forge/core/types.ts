@@ -64,7 +64,10 @@ export type ActionDefinition<
         credentials: CredentialsFromAuthDef<A>
         options: z.infer<BaseOptions> & z.infer<Options>
         variables: VariableStore
-      }) => Promise<ReadableStream<any> | undefined>
+      }) => Promise<{
+        stream?: ReadableStream<any>
+        httpError?: { status: number; message: string }
+      }>
     }
     web?: {
       displayEmbedBubble?: {
@@ -85,7 +88,6 @@ export type ActionDefinition<
         parseInitFunction: (params: {
           options: z.infer<BaseOptions> & z.infer<Options>
         }) => FunctionToExecute
-        maxBubbleWidth?: number
       }
       parseFunction?: (params: {
         options: z.infer<BaseOptions> & z.infer<Options>
@@ -101,7 +103,7 @@ export type FetcherDefinition<A extends AuthDefinition, T = {}> = {
    */
   dependencies: (keyof T)[]
   fetch: (params: {
-    credentials: CredentialsFromAuthDef<A>
+    credentials: CredentialsFromAuthDef<A> | undefined
     options: T
   }) => Promise<(string | { label: string; value: string })[]>
 }
